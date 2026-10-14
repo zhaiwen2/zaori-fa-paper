@@ -1,0 +1,36 @@
+{
+  "name": "paperbridge",
+  "productName": "早日发Paper",
+  "version": "0.1.5",
+  "description": "本地学术文档翻译阅读器，支持 MinerU 与自定义翻译 API",
+  "type": "module",
+  "main": "main.mjs",
+  "license": "MIT",
+  "scripts": {
+    "build": "esbuild renderer.js --bundle --outfile=dist/renderer.js --platform=browser",
+    "start": "npm run build && electron .",
+    "check": "node --check main.mjs && node --check references.mjs && node --check translation.mjs && node --check translation-rate-limit.mjs && node --check translation-queue.mjs && node --check translation-timeout.mjs && node --check files.mjs && node --check document.mjs && node --check preload.cjs && node --check renderer.js",
+    "test": "node --test references.test.mjs files.test.mjs translation-queue.test.mjs document.test.mjs translation.test.mjs translation-rate-limit.test.mjs",
+    "package": "npm run build && node package.mjs",
+    "test:ui": "npm run build && electron renderer.test.mjs",
+    "test:app": "npm run build && electron app.test.mjs"
+  },
+  "dependencies": {
+    "dompurify": "3.4.16",
+    "jszip": "3.10.2",
+    "katex": "0.19.0",
+    "markdown-it": "15.0.2",
+    "markdown-it-texmath": "1.0.0",
+    "parse5": "8.0.1",
+    "remark-gfm": "4.0.1",
+    "remark-math": "6.0.0",
+    "remark-parse": "11.0.0",
+    "remark-stringify": "11.0.0",
+    "unified": "11.0.5"
+  },
+  "devDependencies": {
+    "@electron/packager": "20.3.0",
+    "electron": "44.7.0",
+    "esbuild": "0.28.2"
+  }
+}

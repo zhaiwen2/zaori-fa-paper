@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' paper:; font-src 'self'; connect-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>早日发Paper</title>
+  <link rel="stylesheet" href="node_modules/katex/dist/katex.min.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="app-titlebar" aria-label="应用标题栏">
+    <button id="sidebar-toggle" class="icon-control sidebar-toggle" aria-label="折叠文档侧栏" title="折叠文档侧栏" aria-controls="library" aria-expanded="true"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9 4v16M5.5 8h1M5.5 11h1M5.5 14h1"/></svg></button>
+    <strong class="app-brand"><span>早日发Paper</span></strong><span id="window-title" hidden>早日发Paper</span>
+    <div class="reading-controls" role="toolbar" aria-label="阅读与文档操作">
+      <div id="document-toolbar" class="top-document-toolbar" hidden>
+        <div class="segmented" role="group" aria-label="阅读模式"><button data-mode="parallel" class="active">左右对照</button><button data-mode="bilingual">上下对照</button><button data-mode="original">原文</button><button data-mode="translated">译文</button></div>
+        <div class="toolbar-actions"><button id="reading-toggle" class="secondary" aria-pressed="true" title="关闭后只阅读，不自动发送翻译请求">边读边译：开</button><button id="translate-all" class="secondary">翻译全文</button><button id="more" class="secondary" title="直接重新翻译全文，旧结果备份到本机">重译</button><button id="clear-translations" class="secondary" title="清空当前文档的全部机器译文、人工编辑和历史备份">清空译文</button><button id="export" class="secondary">导出 ↓</button><button id="original" class="secondary" hidden>原文件 ↗</button></div>
+      </div>
+      <button id="immersive-toggle" class="secondary" aria-pressed="false" title="按 Esc 退出">沉浸阅读</button>
+      <button id="document-find" class="secondary" hidden aria-controls="document-search" aria-expanded="false" title="搜索当前文档 · Ctrl+F">⌕ 文内搜索</button>
+      <span id="font-size-control" class="font-size-control" title="按住 Ctrl 并滚动鼠标滚轮调整字号" aria-label="按住 Ctrl 并滚动鼠标滚轮调整字号">A↕</span>
+      <span id="local-save-state" class="reading-save-state"></span>
+      <button id="reading-pause" class="secondary" hidden>暂停翻译</button>
+    </div>
+    <button id="theme-toggle" class="secondary theme-toggle" title="当前为白天主题，点击切换黑夜" aria-pressed="true">☀ 白天</button>
+  </header>
+  <aside class="sidebar">
+    <button id="settings-open" class="settings-button" title="API 与偏好设置" aria-label="API 与偏好设置"><span aria-hidden="true">⚙</span> API 与偏好设置</button>
+    <p class="sidebar-label">我的文档 <span id="document-count">0</span></p>
+    <label class="search"><span>⌕</span><input id="search" type="search" aria-label="搜索文档名称" placeholder="搜索文档名称"></label>
+    <div class="library-wrap"><div id="library" class="library"></div><button id="import" class="primary import-button">＋ 导入文档</button></div>
+  </aside>
+  <div id="sidebar-splitter" class="pane-splitter" role="separator" aria-orientation="vertical" aria-label="拖动调整文档侧栏宽度" tabindex="0"></div>
+
+  <main>
+    <div id="config-prompt" class="setup-prompt" hidden><strong>开始前请完成两项配置</strong><span id="config-summary"></span><button id="welcome-settings" class="text-button" type="button">立即配置 →</button></div>
+    <section id="welcome" class="welcome">
+      <div class="welcome-kicker">早日发Paper</div>
+      <h1>读懂每一篇论文。<br><span>从这里开始。</span></h1>
+      <p>导入论文，解析原文并逐段翻译。原文、译文和阅读进度都保存在本机。</p>
+      <div class="welcome-actions"><button id="welcome-import" class="primary">导入第一份文档 <span>↗</span></button><button id="sample" class="secondary">打开示例</button></div>
+      <div class="privacy-note">PDF 解析时会发送给 MinerU；翻译文本会发送给你配置的服务。</div>
+    </section>
+
+    <section id="workspace" hidden>
+      <div class="reading-layout"><div id="outline-wrap" class="outline-wrap"><button id="outline-toggle" class="icon-control outline-toggle" aria-label="隐藏目录" title="隐藏目录" aria-controls="outline" aria-expanded="true"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9 4v16M12 8h6M12 12h6M12 16h4"/></svg><span>隐藏目录</span></button><nav id="outline" class="outline" aria-label="文档目录"></nav></div><div id="outline-splitter" class="pane-splitter" role="separator" aria-orientation="vertical" aria-label="拖动调整目录宽度" tabindex="0"></div><div id="reader" class="reader"><div id="reading-columns" class="reading-columns" hidden><span>▤ 原文</span><span>▤ 译文</span></div><div id="blocks" class="blocks"></div></div>
+        <aside id="document-search" class="document-search" hidden aria-label="文内搜索">
+          <div class="search-heading"><strong>文内搜索</strong><button id="document-search-close" class="icon-button" aria-label="关闭文内搜索">×</button></div>
+          <label class="search"><span>⌕</span><input id="document-search-input" type="search" aria-label="查找原文和译文" placeholder="输入关键词，查找原文和译文"></label>
+          <p id="document-search-count" class="hint" role="status">输入关键词搜索当前文档</p>
+          <div id="document-search-results" class="document-search-results" aria-label="搜索结果"></div>
+        </aside>
+      </div>
+      <footer class="statusbar"><div class="status-primary"><span id="status-dot" class="status-dot"></span><span id="status">就绪</span><span id="progress"></span></div><div class="status-secondary"><details id="error-panel" class="error-panel"><summary>提示</summary><span id="notice"></span></details><span id="usage"></span></div></footer>
+    </section>
+  </main>
+  <button id="reference-back" class="reference-return" type="button" hidden title="返回跳转前的阅读位置">↶ 返回原位置</button>
+
+  <dialog id="settings-dialog">
+    <button id="settings-close" type="button" data-close="settings-dialog" class="icon-button settings-close" aria-label="关闭">×</button>
+    <form id="settings-form">
+      <div class="dialog-heading"><div><span class="eyebrow">早日发Paper</span><h2>API 与偏好设置</h2></div></div>
+      <div class="settings-scroll">
+        <p class="hint settings-intro">PDF 解析使用 MinerU；翻译可选择云端 API、本地大模型或 Edge。每次更改都会自动保存，API Key 会加密保存在本机；点击右侧按钮可随时隐藏密钥。</p>
+        <details id="parser-config" class="config-card">
+          <summary><span>文档解析</span><span id="parser-config-state" class="config-state">未配置</span></summary>
+          <div class="config-fields">
+            <a id="parser-api-link" class="text-button" href="https://mineru.net/apiManage/docs">文档解析api申请网址</a>
+            <label>MinerU API Token<span class="secret-control"><input name="minerKey" type="password" autocomplete="new-password" spellcheck="false" placeholder="粘贴 MinerU Token" data-secret-input><button type="button" class="secret-toggle" data-secret-toggle="minerKey" aria-pressed="true">显示</button></span></label>
+            <div class="form-row"><label>解析模型<select name="minerModel"><option value="vlm">VLM</option><option value="pipeline">Pipeline</option></select></label><label>识别语言<select name="ocrLang"><option value="en">英语</option><option value="ch">中文</option></select></label></div>
+            <label class="checkbox"><input type="checkbox" name="ocr"> 启用 OCR（扫描版 PDF）</label>
+          </div>
+        </details>
+        <details id="translation-config" class="config-card">
+          <summary><span>翻译配置</span><span id="translation-config-state" class="config-state">未配置</span></summary>
+          <div class="config-fields">
+            <label>翻译方式<select name="provider"><option value="chat">云端 API</option><option value="local-api">本地大模型</option><option value="edge">Edge 翻译（免费）</option></select></label>
+            <fieldset id="cloud-translation-fields">
+            <label>API 基础地址<input name="baseUrl" type="url" placeholder="https://api.deepseek.com"></label>
+            <div class="form-row"><label>使用的模型名称<input name="model" placeholder="例如 deepseek-chat"></label><label>API Key<span class="secret-control"><input name="translateKey" type="password" autocomplete="new-password" spellcheck="false" placeholder="粘贴模型服务商 API Key" data-secret-input><button type="button" class="secret-toggle" data-secret-toggle="translateKey" aria-pressed="true">显示</button></span></label></div>
+            <div class="form-row"><label>单次最多文本片段数<input name="cloudBatchSegments" type="number" min="1" max="200" step="1" placeholder="20"></label><label>单次最多字符数<input name="cloudBatchCharacters" type="number" min="500" max="22500" step="100" placeholder="4000"></label></div>
+            <label>请求间隔（秒）<input name="cloudRequestIntervalSeconds" type="number" min="0" max="120" step="0.1" placeholder="3.1"></label>
+            <p class="hint">默认每次最多 20 个文本片段、4000 个字符，达到任一上限就分批；一段正文可能包含多个片段。调小发送量可缩短等待首批译文的时间。间隔按两次请求开始时间计算，设为 0 时串行连续发送，不额外限频。默认 3.1 秒，请按服务商要求调整。全文、重译、边读边译与连接测试共用请求间隔。</p>
+            </fieldset>
+            <fieldset id="local-translation-fields" hidden disabled>
+              <p class="hint">先启动本机模型的 OpenAI 兼容 API 服务，再填写地址和已加载的模型名称。本地翻译不加请求间隔。</p>
+              <label>本地服务地址<input name="localBaseUrl" type="url" placeholder="http://127.0.0.1:11434/v1"></label>
+              <label>使用的模型名称<input name="localModel" placeholder="填写本机服务中已加载的模型名称"></label>
+              <label>本地 API Key（可选）<span class="secret-control"><input name="localTranslateKey" type="password" autocomplete="new-password" spellcheck="false" placeholder="服务无需密钥时留空"><button type="button" class="secret-toggle" data-secret-toggle="localTranslateKey" aria-pressed="true">显示</button></span></label>
+              <label>每次翻译字数上限<input name="localBatchCharacters" type="number" min="500" max="22500" step="100" placeholder="3000"><small>默认 3000 字符；模型容量较大时可调高。</small></label>
+            </fieldset>
+            <fieldset id="edge-translation-fields" hidden disabled><p class="hint">使用 Microsoft Edge 在线翻译，无需密钥、模型名称或服务地址。软件不设置请求间隔，按批次连续翻译并保存。原文语言可填 English、en 或 auto，目标语言可填简体中文、zh-Hans 或其他语言代码。</p></fieldset>
+            <div class="form-row"><label>原文语言<input name="sourceLang" placeholder="English"></label><label>目标语言<input name="targetLang" placeholder="简体中文"></label></div>
+            <label id="glossary-field">术语偏好（可选）<textarea name="glossary" rows="3" maxlength="6000" placeholder="每行一个，例如 attention → 注意力"></textarea></label>
+          </div>
+        </details>
+        <p id="settings-result" class="form-result" role="status">更改会自动保存。</p>
+      </div>
+      <div class="dialog-actions"><div><button type="button" id="data-folder" class="text-button">打开数据目录 ↗</button><button type="button" id="about-open" class="text-button">关于作者 ↗</button></div><div><button type="button" id="test-connection" class="secondary">测试翻译连接</button></div></div>
+    </form>
+  </dialog>
+
+  <dialog id="about-dialog" aria-labelledby="about-title"><div class="dialog-heading"><h2 id="about-title">关于作者</h2><button data-close="about-dialog" class="icon-button" aria-label="关闭关于作者">×</button></div><p class="about-content">软件的作者是国富贵儿，苦于看不懂英文，特此开发此软件。如有需求建议可以通过以下方式联系到我1919429703@qq.com。祝您天天开心</p></dialog>
+  <dialog id="reference-dialog"><div class="dialog-heading"><h2 id="reference-dialog-title">选择跳转位置</h2><button data-close="reference-dialog" class="icon-button" aria-label="关闭">×</button></div><p class="hint">选择对应对象后跳转，并在本机记住这个位置。按住 Shift 点击引用，可以重新选择。</p><div id="reference-choices" class="reference-choices"></div></dialog>
+  <dialog id="edit-dialog"><div class="dialog-heading"><h2>编辑本段译文</h2><button data-close="edit-dialog" class="icon-button" aria-label="关闭">×</button></div><p class="hint">支持 Markdown。人工修改会保存在本机，自动继续翻译不会覆盖它。</p><textarea id="edit-text" rows="15" aria-label="译文 Markdown"></textarea><div class="dialog-actions"><button id="restore-edit" class="text-button">恢复机器译文</button><button id="save-edit" class="primary">保存译文</button></div></dialog>
+  <dialog id="export-dialog"><div class="dialog-heading"><h2>导出 Markdown</h2><button data-close="export-dialog" class="icon-button" aria-label="关闭">×</button></div><p class="hint">将 Markdown 与本地图片打包成 ZIP。未完成的段落保留原文并标注。</p><div class="export-options"><button data-export="bilingual" class="primary">双语对照</button><button data-export="translated" class="secondary">译文</button><button data-export="original" class="secondary">解析原文</button></div></dialog>
+  <dialog id="rename-dialog"><div class="dialog-heading"><h2>重命名文档</h2><button data-close="rename-dialog" class="icon-button" aria-label="关闭">×</button></div><form id="rename-form"><label>文档名称<input id="rename-name" required maxlength="200" autocomplete="off"></label><p class="hint">修改软件中的显示名称，原文件及文档文件夹保持原位。</p><div class="dialog-actions"><button type="button" data-close="rename-dialog" class="secondary">取消</button><button type="submit" class="primary">保存名称</button></div></form></dialog>
+  <div id="toast" class="toast" role="status" hidden></div>
+  <script src="dist/renderer.js"></script>
+</body>
+</html>
